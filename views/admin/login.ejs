@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Login Admin - NgeWebYuk</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-white flex justify-center items-center min-h-screen">
+  <form action="/admin/login" method="POST" class="bg-slate-900 p-8 rounded-xl border border-slate-800 space-y-4 w-96">
+    <h1 class="text-2xl font-bold text-center">Admin Panel</h1>
+    <input type="text" name="username" placeholder="Username" class="w-full p-2.5 bg-slate-800 border border-slate-700 rounded text-sm focus:outline-none">
+    <input type="password" name="password" placeholder="Password" class="w-full p-2.5 bg-slate-800 border border-slate-700 rounded text-sm focus:outline-none">
+    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 p-2.5 rounded text-sm font-semibold transition">Login</button>
+  </form>
+</body>
+</html>
