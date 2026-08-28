@@ -46,6 +46,7 @@
       border-radius: 8px;
       margin-bottom: 4px;
       transition: all 0.3s;
+      cursor: pointer;
     }
     .sidebar .nav-item:hover {
       background: rgba(255,255,255,0.1);
@@ -262,30 +263,45 @@
     .refresh-btn:hover {
       background: #f5f5f5;
     }
-    .tab-nav {
-      display: flex;
-      gap: 4px;
-      margin-bottom: 16px;
-      border-bottom: 1px solid #eee;
+
+    /* QR Code Styles */
+    #qrSection {
+      text-align: center;
     }
-    .tab-nav .tab {
-      padding: 10px 20px;
-      cursor: pointer;
-      border-bottom: 3px solid transparent;
-      font-weight: 500;
-      color: #888;
-      transition: all 0.3s;
+    #qrImage {
+      max-width: 300px;
+      border: 2px solid #e0e0e0;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      background: white;
+      padding: 10px;
     }
-    .tab-nav .tab.active {
-      color: #667eea;
-      border-bottom-color: #667eea;
+    #qrConnected {
+      animation: fadeIn 0.5s ease;
     }
-    .tab-content {
-      display: none;
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.9); }
+      to { opacity: 1; transform: scale(1); }
     }
-    .tab-content.active {
-      display: block;
+    #qrLoading {
+      padding: 40px;
+      color: #666;
     }
+    .spinner {
+      display: inline-block;
+      width: 40px;
+      height: 40px;
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #667eea;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 10px;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
     .toast {
       position: fixed;
       bottom: 30px;
@@ -365,6 +381,35 @@
       <div class="stat-card">
         <div class="number" id="totalRevenue">Rp <%= (totalRevenue || 0).toLocaleString() %></div>
         <div class="label">📈 Total Revenue</div>
+      </div>
+    </div>
+
+    <!-- QR CODE SECTION -->
+    <div class="section" id="qrSection">
+      <h2>📱 WhatsApp Bot Connection</h2>
+      <div id="qrContainer" style="text-align:center;padding:20px;">
+        <div id="qrLoading">
+          <div class="spinner"></div>
+          <p>⏳ Loading QR Code...</p>
+        </div>
+        <div id="qrDisplay" style="display:none;">
+          <img id="qrImage" src="" alt="QR Code" style="max-width:300px;border:1px solid #ddd;border-radius:8px;padding:10px;background:white;">
+          <p style="margin-top:10px;color:#666;">Scan dengan WhatsApp untuk menghubungkan bot</p>
+          <p style="font-size:12px;color:#999;">Nomor Bot: <strong>089514953909</strong></p>
+          <button onclick="refreshQR()" class="btn btn-primary">🔄 Refresh QR</button>
+        </div>
+        <div id="qrConnected" style="display:none;">
+          <div style="padding:40px;background:#d4edda;border-radius:8px;">
+            <span style="font-size:48px;">✅</span>
+            <h3 style="color:#155724;">WhatsApp Bot Terhubung!</h3>
+            <p style="color:#155724;">Bot sudah siap menerima pesan</p>
+            <button onclick="disconnectBot()" class="btn btn-danger">🔌 Disconnect</button>
+          </div>
+        </div>
+        <div id="qrError" style="display:none;color:#721c24;background:#f8d7da;padding:20px;border-radius:8px;">
+          <p id="qrErrorMessage">Error loading QR Code</p>
+          <button onclick="refreshQR()" class="btn btn-primary">🔄 Coba Lagi</button>
+        </div>
       </div>
     </div>
 
@@ -478,7 +523,62 @@
   <div class="toast" id="toast"></div>
 
   <script>
-    // Load section via AJAX
+    // ============ QR CODE FUNCTIONS ============
+    async function loadQR() {
+      const loading = document.getElementById('qrLoading');
+      const display = document.getElementById('qrDisplay');
+      const connected = document.getElementById('qrConnected');
+      const error = document.getElementById('qrError');
+      
+      try {
+        loading.style.display = 'block';
+        display.style.display = 'none';
+        connected.style.display = 'none';
+        error.style.display = 'none';
+        
+        const response = await fetch('/admin/api/get-qr');
+        const data = await response.json();
+        
+        loading.style.display = 'none';
+        
+        if (data.connected) {
+          connected.style.display = 'block';
+        } else if (data.success && data.qrImage) {
+          document.getElementById('qrImage').src = data.qrImage;
+          display.style.display = 'block';
+        } else {
+          error.style.display = 'block';
+          document.getElementById('qrErrorMessage').textContent = data.message || 'QR Code not available';
+        }
+      } catch (err) {
+        loading.style.display = 'none';
+        error.style.display = 'block';
+        document.getElementById('qrErrorMessage').textContent = 'Error: ' + err.message;
+      }
+    }
+
+    async function refreshQR() {
+      await loadQR();
+    }
+
+    async function disconnectBot() {
+      if (confirm('Yakin ingin disconnect bot?')) {
+        try {
+          const response = await fetch('/admin/api/disconnect', {
+            method: 'POST'
+          });
+          const data = await response.json();
+          if (data.success) {
+            showToast('Bot disconnected!', 'success');
+            setTimeout(loadQR, 2000);
+          }
+        } catch (err) {
+          showToast('Error: ' + err.message, 'error');
+        }
+      }
+    }
+
+    // ============ EXISTING FUNCTIONS ============
     function loadSection(section) {
       const content = document.getElementById('dynamicContent');
       
@@ -929,7 +1029,6 @@
     }
 
     function showAddVoucherModal() {
-      // Simple prompt for creating voucher
       const code = prompt('Enter voucher code:');
       if (!code) return;
       const tokenAmount = parseInt(prompt('Enter token amount:'));
@@ -1013,7 +1112,6 @@
     }
 
     function refreshData() {
-      // Update stats
       fetch(window.location.href)
         .then(res => res.text())
         .then(html => {
@@ -1052,8 +1150,10 @@
       });
     });
 
-    // Load API keys by default
+    // Load QR and API keys on page load
     document.addEventListener('DOMContentLoaded', function() {
+      loadQR();
+      setInterval(loadQR, 10000);
       fetchApiKeys();
     });
   </script>
