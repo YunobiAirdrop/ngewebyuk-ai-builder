@@ -2,11 +2,1060 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard - NgeWebYuk Admin</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f5f7fa;
+      color: #333;
+    }
+    .sidebar {
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: 250px;
+      height: 100vh;
+      background: linear-gradient(180deg, #1a1a2e, #16213e);
+      color: white;
+      padding: 20px;
+      overflow-y: auto;
+    }
+    .sidebar .logo {
+      font-size: 24px;
+      font-weight: 700;
+      padding: 20px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      margin-bottom: 20px;
+    }
+    .sidebar .logo span {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .sidebar .nav-item {
+      display: block;
+      padding: 12px 16px;
+      color: rgba(255,255,255,0.7);
+      text-decoration: none;
+      border-radius: 8px;
+      margin-bottom: 4px;
+      transition: all 0.3s;
+    }
+    .sidebar .nav-item:hover {
+      background: rgba(255,255,255,0.1);
+      color: white;
+    }
+    .sidebar .nav-item.active {
+      background: rgba(102, 126, 234, 0.3);
+      color: white;
+    }
+    .main-content {
+      margin-left: 250px;
+      padding: 30px;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+    }
+    .header h1 {
+      font-size: 28px;
+      font-weight: 700;
+    }
+    .header .user-info {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .header .user-info .badge {
+      background: #667eea;
+      color: white;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+    .stat-card {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .stat-card .number {
+      font-size: 32px;
+      font-weight: 700;
+      color: #667eea;
+    }
+    .stat-card .label {
+      color: #888;
+      font-size: 14px;
+      margin-top: 4px;
+    }
+    .section {
+      background: white;
+      padding: 24px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      margin-bottom: 24px;
+    }
+    .section h2 {
+      font-size: 20px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .table-wrap {
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    table th {
+      background: #f8f9fa;
+      text-align: left;
+      padding: 12px 16px;
+      font-weight: 600;
+      color: #555;
+    }
+    table td {
+      padding: 12px 16px;
+      border-bottom: 1px solid #eee;
+    }
+    table tr:hover {
+      background: #f8f9fa;
+    }
+    .status-badge {
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .status-badge.active {
+      background: #d4edda;
+      color: #155724;
+    }
+    .status-badge.inactive {
+      background: #f8d7da;
+      color: #721c24;
+    }
+    .status-badge.pending {
+      background: #fff3cd;
+      color: #856404;
+    }
+    .btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-size: 13px;
+    }
+    .btn-primary {
+      background: #667eea;
+      color: white;
+    }
+    .btn-primary:hover {
+      background: #5a6fd6;
+    }
+    .btn-danger {
+      background: #dc3545;
+      color: white;
+    }
+    .btn-danger:hover {
+      background: #c82333;
+    }
+    .btn-success {
+      background: #28a745;
+      color: white;
+    }
+    .btn-success:hover {
+      background: #218838;
+    }
+    .btn-sm {
+      padding: 4px 12px;
+      font-size: 12px;
+    }
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-overlay.show {
+      display: flex;
+    }
+    .modal {
+      background: white;
+      padding: 30px;
+      border-radius: 16px;
+      max-width: 500px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    .modal h3 {
+      margin-bottom: 16px;
+    }
+    .modal .form-group {
+      margin-bottom: 16px;
+    }
+    .modal .form-group label {
+      display: block;
+      margin-bottom: 4px;
+      font-weight: 500;
+      font-size: 14px;
+    }
+    .modal .form-group input,
+    .modal .form-group select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    .modal .form-group input:focus,
+    .modal .form-group select:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    .modal .modal-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+      justify-content: flex-end;
+    }
+    .empty-state {
+      text-align: center;
+      padding: 40px;
+      color: #999;
+    }
+    .refresh-btn {
+      background: transparent;
+      border: 1px solid #ddd;
+      padding: 6px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .refresh-btn:hover {
+      background: #f5f5f5;
+    }
+    .tab-nav {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 16px;
+      border-bottom: 1px solid #eee;
+    }
+    .tab-nav .tab {
+      padding: 10px 20px;
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      font-weight: 500;
+      color: #888;
+      transition: all 0.3s;
+    }
+    .tab-nav .tab.active {
+      color: #667eea;
+      border-bottom-color: #667eea;
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    .toast {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      padding: 16px 24px;
+      border-radius: 8px;
+      color: white;
+      font-weight: 500;
+      z-index: 2000;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.3s;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .toast.success {
+      background: #28a745;
+    }
+    .toast.error {
+      background: #dc3545;
+    }
+    @media (max-width: 768px) {
+      .sidebar {
+        display: none;
+      }
+      .main-content {
+        margin-left: 0;
+        padding: 16px;
+      }
+    }
+  </style>
 </head>
-<body class="bg-slate-950 text-white p-8">
-  <h1 class="text-3xl font-bold">NgeWebYuk AI Admin Dashboard</h1>
-  <script src="/js/admin.js"></script>
+<body>
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="logo"><span>🚀 NgeWebYuk</span></div>
+    <a href="#" class="nav-item active">📊 Dashboard</a>
+    <a href="#" class="nav-item" onclick="loadSection('api-keys')">🔑 API Keys</a>
+    <a href="#" class="nav-item" onclick="loadSection('settings')">⚙️ Settings</a>
+    <a href="#" class="nav-item" onclick="loadSection('users')">👥 Users</a>
+    <a href="#" class="nav-item" onclick="loadSection('projects')">🌐 Projects</a>
+    <a href="#" class="nav-item" onclick="loadSection('deposits')">💰 Deposits</a>
+    <a href="#" class="nav-item" onclick="loadSection('transactions')">📊 Transactions</a>
+    <a href="#" class="nav-item" onclick="loadSection('vouchers')">🎫 Vouchers</a>
+    <a href="#" class="nav-item" onclick="loadSection('reseller')">🤝 Reseller</a>
+    <a href="/admin/backup" class="nav-item">💾 Backup DB</a>
+    <a href="/admin/logout" class="nav-item" style="margin-top:20px;border-top:1px solid rgba(255,255,255,0.1);padding-top:16px;">🚪 Logout</a>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <div class="header">
+      <h1>📊 Dashboard</h1>
+      <div class="user-info">
+        <span class="badge">Admin</span>
+        <span><%= adminPhone %></span>
+        <button class="refresh-btn" onclick="refreshData()">🔄 Refresh</button>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid" id="statsGrid">
+      <div class="stat-card">
+        <div class="number" id="userCount"><%= userCount || 0 %></div>
+        <div class="label">👥 Total Users</div>
+      </div>
+      <div class="stat-card">
+        <div class="number" id="projectCount"><%= projectCount || 0 %></div>
+        <div class="label">🌐 Websites Built</div>
+      </div>
+      <div class="stat-card">
+        <div class="number" id="depositCount"><%= depositCount || 0 %></div>
+        <div class="label">💰 Deposits</div>
+      </div>
+      <div class="stat-card">
+        <div class="number" id="totalRevenue">Rp <%= (totalRevenue || 0).toLocaleString() %></div>
+        <div class="label">📈 Total Revenue</div>
+      </div>
+    </div>
+
+    <!-- Dynamic Content -->
+    <div id="dynamicContent">
+      <!-- API Keys Section -->
+      <div class="section" id="apiKeysSection">
+        <h2>🔑 API Keys Manager</h2>
+        <button class="btn btn-primary" onclick="showAddApiKeyModal()">+ Add API Key</button>
+        <div class="table-wrap" style="margin-top:16px;">
+          <table>
+            <thead>
+              <tr>
+                <th>Provider</th>
+                <th>Category</th>
+                <th>API Key</th>
+                <th>Status</th>
+                <th>Usage</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="apiKeysTable">
+              <% if (apiKeys && apiKeys.length > 0) { %>
+                <% apiKeys.forEach(key => { %>
+                  <tr>
+                    <td><strong><%= key.provider_name %></strong></td>
+                    <td><span class="status-badge"><%= key.category_function %></span></td>
+                    <td><code style="font-size:12px;"><%= key.api_key.substring(0, 8) %>...</code></td>
+                    <td>
+                      <span class="status-badge <%= key.status ? 'active' : 'inactive' %>">
+                        <%= key.status ? 'Active' : 'Inactive' %>
+                      </span>
+                    </td>
+                    <td><%= key.usage_count || 0 %></td>
+                    <td>
+                      <button class="btn btn-primary btn-sm" onclick="editApiKey(<%= key.id %>)">✏️</button>
+                      <button class="btn btn-danger btn-sm" onclick="deleteApiKey(<%= key.id %>)">🗑️</button>
+                    </td>
+                  </tr>
+                <% }) %>
+              <% } else { %>
+                <tr><td colspan="6"><div class="empty-state">No API keys configured</div></td></tr>
+              <% } %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add API Key Modal -->
+  <div class="modal-overlay" id="addApiKeyModal">
+    <div class="modal">
+      <h3>➕ Add API Key</h3>
+      <form id="addApiKeyForm" onsubmit="submitAddApiKey(event)">
+        <div class="form-group">
+          <label>Provider Name</label>
+          <input type="text" id="providerName" placeholder="e.g., openai, groq" required>
+        </div>
+        <div class="form-group">
+          <label>API Key</label>
+          <input type="text" id="apiKeyValue" placeholder="sk-..." required>
+        </div>
+        <div class="form-group">
+          <label>Category</label>
+          <select id="apiCategory">
+            <option value="text_chat">Text Chat</option>
+            <option value="web_builder">Web Builder</option>
+            <option value="vision">Vision</option>
+            <option value="image_generator">Image Generator</option>
+            <option value="video_generator">Video Generator</option>
+            <option value="voice_engine">Voice Engine</option>
+            <option value="document_analyzer">Document Analyzer</option>
+            <option value="infra_deploy">Infra Deploy</option>
+          </select>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-danger" onclick="closeModal('addApiKeyModal')">Cancel</button>
+          <button type="submit" class="btn btn-success">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit API Key Modal -->
+  <div class="modal-overlay" id="editApiKeyModal">
+    <div class="modal">
+      <h3>✏️ Edit API Key</h3>
+      <form id="editApiKeyForm" onsubmit="submitEditApiKey(event)">
+        <input type="hidden" id="editApiKeyId">
+        <div class="form-group">
+          <label>API Key</label>
+          <input type="text" id="editApiKeyValue" required>
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select id="editApiKeyStatus">
+            <option value="1">Active</option>
+            <option value="0">Inactive</option>
+          </select>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-danger" onclick="closeModal('editApiKeyModal')">Cancel</button>
+          <button type="submit" class="btn btn-success">Update</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // Load section via AJAX
+    function loadSection(section) {
+      const content = document.getElementById('dynamicContent');
+      
+      if (section === 'api-keys') {
+        fetchApiKeys();
+      } else if (section === 'settings') {
+        loadSettings();
+      } else if (section === 'users') {
+        loadUsers();
+      } else if (section === 'projects') {
+        loadProjects();
+      } else if (section === 'deposits') {
+        loadDeposits();
+      } else if (section === 'transactions') {
+        loadTransactions();
+      } else if (section === 'vouchers') {
+        loadVouchers();
+      } else if (section === 'reseller') {
+        loadResellers();
+      }
+    }
+
+    function fetchApiKeys() {
+      fetch('/admin/api-keys')
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            renderApiKeys(data.data);
+          }
+        })
+        .catch(err => console.error('Error fetching API keys:', err));
+    }
+
+    function renderApiKeys(keys) {
+      const tbody = document.getElementById('apiKeysTable');
+      if (!tbody) return;
+      
+      if (keys.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state">No API keys configured</div></td></tr>`;
+        return;
+      }
+      
+      tbody.innerHTML = keys.map(key => `
+        <tr>
+          <td><strong>${key.provider_name}</strong></td>
+          <td><span class="status-badge">${key.category_function}</span></td>
+          <td><code style="font-size:12px;">${key.api_key.substring(0, 8)}...</code></td>
+          <td>
+            <span class="status-badge ${key.status ? 'active' : 'inactive'}">
+              ${key.status ? 'Active' : 'Inactive'}
+            </span>
+          </td>
+          <td>${key.usage_count || 0}</td>
+          <td>
+            <button class="btn btn-primary btn-sm" onclick="editApiKey(${key.id})">✏️</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteApiKey(${key.id})">🗑️</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function showAddApiKeyModal() {
+      document.getElementById('addApiKeyModal').classList.add('show');
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('show');
+    }
+
+    function submitAddApiKey(e) {
+      e.preventDefault();
+      const providerName = document.getElementById('providerName').value;
+      const apiKey = document.getElementById('apiKeyValue').value;
+      const category = document.getElementById('apiCategory').value;
+
+      fetch('/admin/api-keys/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ providerName, apiKey, category })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          showToast('API key added successfully!', 'success');
+          closeModal('addApiKeyModal');
+          document.getElementById('addApiKeyForm').reset();
+          fetchApiKeys();
+        } else {
+          showToast('Error: ' + data.error, 'error');
+        }
+      })
+      .catch(err => showToast('Error: ' + err.message, 'error'));
+    }
+
+    function editApiKey(id) {
+      fetch('/admin/api-keys')
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            const key = data.data.find(k => k.id === id);
+            if (key) {
+              document.getElementById('editApiKeyId').value = key.id;
+              document.getElementById('editApiKeyValue').value = key.api_key;
+              document.getElementById('editApiKeyStatus').value = key.status;
+              document.getElementById('editApiKeyModal').classList.add('show');
+            }
+          }
+        });
+    }
+
+    function submitEditApiKey(e) {
+      e.preventDefault();
+      const id = document.getElementById('editApiKeyId').value;
+      const apiKey = document.getElementById('editApiKeyValue').value;
+      const status = parseInt(document.getElementById('editApiKeyStatus').value);
+
+      fetch('/admin/api-keys/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, apiKey, status })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          showToast('API key updated successfully!', 'success');
+          closeModal('editApiKeyModal');
+          fetchApiKeys();
+        } else {
+          showToast('Error: ' + data.error, 'error');
+        }
+      })
+      .catch(err => showToast('Error: ' + err.message, 'error'));
+    }
+
+    function deleteApiKey(id) {
+      if (!confirm('Are you sure you want to delete this API key?')) return;
+      
+      fetch(`/admin/api-keys/${id}`, {
+        method: 'DELETE'
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          showToast('API key deleted!', 'success');
+          fetchApiKeys();
+        } else {
+          showToast('Error: ' + data.error, 'error');
+        }
+      })
+      .catch(err => showToast('Error: ' + err.message, 'error'));
+    }
+
+    function loadSettings() {
+      fetch('/admin/settings')
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            const settings = data.data;
+            const content = document.getElementById('dynamicContent');
+            content.innerHTML = `
+              <div class="section">
+                <h2>⚙️ Settings</h2>
+                <form onsubmit="updateSettings(event)">
+                  <div class="form-group">
+                    <label>Flat Command Cost (Token)</label>
+                    <input type="number" name="flat_command_cost" value="${settings.flat_command_cost}" required>
+                  </div>
+                  <div class="form-group">
+                    <label>Free Trial Daily Tokens</label>
+                    <input type="number" name="free_trial_daily_tokens" value="${settings.free_trial_daily_tokens}" required>
+                  </div>
+                  <div class="form-group">
+                    <label>Trial Duration (Days)</label>
+                    <input type="number" name="trial_duration_days" value="${settings.trial_duration_days}" required>
+                  </div>
+                  <div class="form-group">
+                    <label>Token Rate (IDR)</label>
+                    <input type="number" name="token_rate_idr" value="${settings.token_rate_idr}" required>
+                  </div>
+                  <div class="form-group">
+                    <label>Bot WhatsApp Number</label>
+                    <input type="text" name="bot_wa_number" value="${settings.bot_wa_number}" required>
+                  </div>
+                  <div class="form-group">
+                    <label>Admin WhatsApp Number</label>
+                    <input type="text" name="admin_wa_number" value="${settings.admin_wa_number}" required>
+                  </div>
+                  <div class="form-group">
+                    <label>Cloudflare API Token</label>
+                    <input type="text" name="cloudflare_api_token" value="${settings.cloudflare_api_token || ''}">
+                  </div>
+                  <div class="form-group">
+                    <label>Unsplash Access Key</label>
+                    <input type="text" name="unsplash_access_key" value="${settings.unsplash_access_key || ''}">
+                  </div>
+                  <button type="submit" class="btn btn-success">Save Settings</button>
+                </form>
+              </div>
+            `;
+          }
+        });
+    }
+
+    function updateSettings(e) {
+      e.preventDefault();
+      const form = e.target;
+      const data = {};
+      new FormData(form).forEach((value, key) => {
+        data[key] = value;
+      });
+
+      fetch('/admin/settings/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          showToast('Settings updated!', 'success');
+        } else {
+          showToast('Error: ' + data.error, 'error');
+        }
+      })
+      .catch(err => showToast('Error: ' + err.message, 'error'));
+    }
+
+    function loadUsers() {
+      fetch('/admin/users')
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            renderUserTable(data.data);
+          }
+        });
+    }
+
+    function renderUserTable(users) {
+      const content = document.getElementById('dynamicContent');
+      content.innerHTML = `
+        <div class="section">
+          <h2>👥 Users</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Phone</th>
+                  <th>Username</th>
+                  <th>Balance</th>
+                  <th>Premium</th>
+                  <th>Joined</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${users.map(u => `
+                  <tr>
+                    <td>${u.phone_number}</td>
+                    <td>${u.username || '-'}</td>
+                    <td>${u.saldo_kredit}</td>
+                    <td><span class="status-badge ${u.is_premium ? 'active' : 'inactive'}">${u.is_premium ? '✅' : '❌'}</span></td>
+                    <td>${new Date(u.created_at).toLocaleDateString()}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    function loadProjects() {
+      fetch('/admin/projects')
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            renderProjectTable(data.data);
+          }
+        });
+    }
+
+    function renderProjectTable(projects) {
+      const content = document.getElementById('dynamicContent');
+      content.innerHTML = `
+        <div class="section">
+          <h2>🌐 Projects</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Owner</th>
+                  <th>Domain</th>
+                  <th>Created</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${projects.map(p => `
+                  <tr>
+                    <td><strong>${p.project_name}</strong></td>
+                    <td>${p.user_phone}</td>
+                    <td>${p.custom_domain || p.subdomain_name || '-'}</td>
+                    <td>${new Date(p.created_at).toLocaleDateString()}</td>
+                    <td>
+                      <a href="/preview/${p.id}" target="_blank" class="btn btn-primary btn-sm">Preview</a>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    function loadDeposits() {
+      fetch('/admin/deposits')
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            renderDepositTable(data.data);
+          }
+        });
+    }
+
+    function renderDepositTable(deposits) {
+      const content = document.getElementById('dynamicContent');
+      content.innerHTML = `
+        <div class="section">
+          <h2>💰 Deposits</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>User</th>
+                  <th>Amount</th>
+                  <th>Tokens</th>
+                  <th>Status</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${deposits.map(d => `
+                  <tr>
+                    <td>#${d.id}</td>
+                    <td>${d.user_phone}</td>
+                    <td>Rp ${d.jumlah.toLocaleString()}</td>
+                    <td>${d.token_amount}</td>
+                    <td><span class="status-badge ${d.status === 'completed' ? 'active' : d.status === 'pending' ? 'pending' : 'inactive'}">${d.status}</span></td>
+                    <td>${new Date(d.created_at).toLocaleDateString()}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    function loadTransactions() {
+      fetch('/admin/transactions')
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            renderTransactionTable(data.data);
+          }
+        });
+    }
+
+    function renderTransactionTable(transactions) {
+      const content = document.getElementById('dynamicContent');
+      content.innerHTML = `
+        <div class="section">
+          <h2>📊 Transactions</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>User</th>
+                  <th>Type</th>
+                  <th>Amount</th>
+                  <th>Description</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${transactions.map(t => `
+                  <tr>
+                    <td>${t.user_phone}</td>
+                    <td><span class="status-badge ${t.type === 'credit' ? 'active' : 'inactive'}">${t.type}</span></td>
+                    <td>${t.amount}</td>
+                    <td>${t.description || '-'}</td>
+                    <td>${new Date(t.created_at).toLocaleDateString()}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    function loadVouchers() {
+      fetch('/admin/vouchers')
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            renderVoucherTable(data.data);
+          }
+        });
+    }
+
+    function renderVoucherTable(vouchers) {
+      const content = document.getElementById('dynamicContent');
+      content.innerHTML = `
+        <div class="section">
+          <h2>🎫 Vouchers</h2>
+          <button class="btn btn-primary" onclick="showAddVoucherModal()">+ Create Voucher</button>
+          <div class="table-wrap" style="margin-top:16px;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Code</th>
+                  <th>Tokens</th>
+                  <th>Uses</th>
+                  <th>Max Uses</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${vouchers.map(v => `
+                  <tr>
+                    <td><strong>${v.code}</strong></td>
+                    <td>${v.token_amount}</td>
+                    <td>${v.current_uses}</td>
+                    <td>${v.max_uses}</td>
+                    <td>
+                      <button class="btn btn-danger btn-sm" onclick="deleteVoucher(${v.id})">🗑️</button>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    function showAddVoucherModal() {
+      // Simple prompt for creating voucher
+      const code = prompt('Enter voucher code:');
+      if (!code) return;
+      const tokenAmount = parseInt(prompt('Enter token amount:'));
+      if (isNaN(tokenAmount)) return;
+      const maxUses = parseInt(prompt('Max uses (default 1):')) || 1;
+
+      fetch('/admin/vouchers/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, tokenAmount, maxUses })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          showToast('Voucher created!', 'success');
+          loadVouchers();
+        } else {
+          showToast('Error: ' + data.error, 'error');
+        }
+      });
+    }
+
+    function deleteVoucher(id) {
+      if (!confirm('Delete this voucher?')) return;
+      
+      fetch(`/admin/vouchers/${id}`, {
+        method: 'DELETE'
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          showToast('Voucher deleted!', 'success');
+          loadVouchers();
+        } else {
+          showToast('Error: ' + data.error, 'error');
+        }
+      });
+    }
+
+    function loadResellers() {
+      fetch('/admin/reseller')
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            renderResellerTable(data.data);
+          }
+        });
+    }
+
+    function renderResellerTable(resellers) {
+      const content = document.getElementById('dynamicContent');
+      content.innerHTML = `
+        <div class="section">
+          <h2>🤝 Resellers</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Phone</th>
+                  <th>Username</th>
+                  <th>Balance</th>
+                  <th>Premium</th>
+                  <th>Joined</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${resellers.map(r => `
+                  <tr>
+                    <td>${r.phone_number}</td>
+                    <td>${r.username || '-'}</td>
+                    <td>${r.saldo_kredit}</td>
+                    <td><span class="status-badge ${r.is_premium ? 'active' : 'inactive'}">${r.is_premium ? '✅' : '❌'}</span></td>
+                    <td>${new Date(r.created_at).toLocaleDateString()}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    function refreshData() {
+      // Update stats
+      fetch(window.location.href)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(html, 'text/html');
+          const userCount = doc.querySelector('#userCount')?.textContent || '0';
+          const projectCount = doc.querySelector('#projectCount')?.textContent || '0';
+          const depositCount = doc.querySelector('#depositCount')?.textContent || '0';
+          const totalRevenue = doc.querySelector('#totalRevenue')?.textContent || 'Rp 0';
+          
+          document.getElementById('userCount').textContent = userCount;
+          document.getElementById('projectCount').textContent = projectCount;
+          document.getElementById('depositCount').textContent = depositCount;
+          document.getElementById('totalRevenue').textContent = totalRevenue;
+          
+          showToast('Data refreshed!', 'success');
+        })
+        .catch(err => showToast('Error refreshing data', 'error'));
+    }
+
+    function showToast(message, type = 'success') {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.className = `toast ${type} show`;
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 3000);
+    }
+
+    // Close modal on overlay click
+    document.querySelectorAll('.modal-overlay').forEach(overlay => {
+      overlay.addEventListener('click', function(e) {
+        if (e.target === this) {
+          this.classList.remove('show');
+        }
+      });
+    });
+
+    // Load API keys by default
+    document.addEventListener('DOMContentLoaded', function() {
+      fetchApiKeys();
+    });
+  </script>
 </body>
 </html>
