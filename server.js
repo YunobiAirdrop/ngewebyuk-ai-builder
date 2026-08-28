@@ -3,7 +3,6 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
-const https = require('https');
 const rateLimit = require('express-rate-limit');
 
 const app = express();
@@ -32,11 +31,13 @@ app.use('/api', limiter);
 const webhookRoutes = require('./routes/webhook');
 const previewRoutes = require('./routes/preview');
 const adminRoutes = require('./routes/admin');
+const qrRoutes = require('./routes/qr');
 
 // Routes
 app.use('/webhook', webhookRoutes);
 app.use('/preview', previewRoutes);
 app.use('/admin', adminRoutes);
+app.use('/admin/api', qrRoutes.router);
 
 // Health check
 app.get('/ping', (req, res) => {
