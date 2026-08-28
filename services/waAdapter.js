@@ -4,6 +4,9 @@ const { getDb } = require('../config/database');
 const { getUserByPhone, deductTokens, addTokens } = require('../middleware/auth');
 const { generateWebsite } = require('./aiEngine');
 
+// IMPORT QR FUNCTIONS
+const { setQRData, setConnected } = require('../routes/qr');
+
 let sock = null;
 let isBotRunning = false;
 let botPhoneNumber = process.env.BOT_PHONE || '089514953909';
@@ -58,6 +61,10 @@ async function startBot() {
       const { connection, lastDisconnect, qr } = update;
       
       if (qr) {
+        console.log('📱 QR Code generated for WhatsApp');
+        // SAVE QR FOR ADMIN PANEL
+        setQRData(qr);
+        
         console.log('📱 Scan QR Code to connect WhatsApp:');
         qrcode.generate(qr, { small: true });
       }
@@ -65,6 +72,7 @@ async function startBot() {
       if (connection === 'close') {
         const reason = lastDisconnect?.error?.output?.statusCode;
         console.log(`❌ Connection closed: ${reason}`);
+        setConnected(false);
         
         if (reason !== DisconnectReason.loggedOut) {
           isBotRunning = false;
@@ -74,6 +82,7 @@ async function startBot() {
         }
       } else if (connection === 'open') {
         isBotRunning = true;
+        setConnected(true);
         console.log(`✅ WhatsApp bot connected! Bot number: ${botPhoneNumber}`);
         sendStartupNotification();
       }
@@ -96,7 +105,6 @@ async function startBot() {
 
         console.log(`📩 Message from ${senderNumber}: ${text.substring(0, 100)}`);
 
-        // Process commands
         await processCommand(sender, senderNumber, text, message);
 
       } catch (error) {
@@ -112,10 +120,8 @@ async function startBot() {
 }
 
 async function processCommand(sender, senderNumber, text, message) {
-  // Check for bot mention or direct command
   const trimmed = text.trim();
   
-  // Check if it's a command
   if (trimmed.startsWith('!')) {
     const parts = trimmed.split(' ');
     const command = parts[0].toLowerCase();
@@ -125,19 +131,15 @@ async function processCommand(sender, senderNumber, text, message) {
     if (handler) {
       await handler(sender, senderNumber, args, message);
     } else {
-      // Try AI response
       await handleAIChat(sender, senderNumber, trimmed);
     }
     return;
   }
 
-  // Not a command, check if it's a chat with bot
   if (message.key.fromMe || message.key.participant) {
-    // Ignore messages from self
     return;
   }
 
-  // Regular chat - try AI response
   await handleAIChat(sender, senderNumber, trimmed);
 }
 
@@ -159,7 +161,6 @@ async function sendStartupNotification() {
     const db = getDb();
     const users = db.prepare('SELECT phone_number FROM users WHERE is_premium = 1').all();
     
-    // Send to admin
     await sendMessage(`${adminPhoneNumber}@s.whatsapp.net`, `
 🤖 *NgeWebYuk AI Builder Bot Active* 
 
@@ -174,7 +175,7 @@ Gunakan !menu untuk melihat semua fitur.
   }
 }
 
-// Command Handlers
+// ============ COMMAND HANDLERS ============
 
 async function handleMenu(sender, senderNumber, args) {
   const menu = `
@@ -199,7 +200,8 @@ async function handleMenu(sender, senderNumber, args) {
    Kirim file PDF/DOC untuk analisis
 
 5️⃣ *Cek Saldo/Deposit*
-   - !saldo - Cek saldo token   - !deposit <jumlah> - Deposit token
+   - !saldo - Cek saldo token
+   - !deposit <jumlah> - Deposit token
 
 6️⃣ *Kemitraan & Team*
    - !addteam <nomor> - Tambah anggota team
@@ -231,18 +233,14 @@ async function handleCreateWebsite(sender, senderNumber, args) {
 
   try {
     const description = args.join(' ');
-    
-    // Check user and deduct tokens
     const user = await getUserByPhone(senderNumber);
     await deductTokens(user.id, 270);
     
     await sendMessage(sender, '🔄 *Sedang membuat website...* Mohon tunggu beberapa saat.');
 
-    // Generate website
     const result = await generateWebsite(description, user.id);
     
     if (result.success) {
-      // Save to database
       const db = getDb();
       const insert = db.prepare(`
         INSERT INTO web_projects (user_id, project_name, html_code, css_code, js_code, preview_id)
@@ -275,7 +273,6 @@ async function handleCreateWebsite(sender, senderNumber, args) {
    !deploy ${projectId} - Deploy ke Vercel
       `);
     } else {
-      // Refund tokens on error
       await addTokens(user.id, 270, 'Token rollback (API error)');
       await sendMessage(sender, `❌ Gagal membuat website: ${result.error}\n\nToken telah dikembalikan.`);
     }
@@ -376,7 +373,6 @@ async function handleDeploy(sender, senderNumber, args) {
 
     const user = await getUserByPhone(senderNumber);
     
-    // Check if user has Vercel token
     if (!user.user_vercel_token) {
       await sendMessage(sender, `
 ❌ *Token Vercel tidak ditemukan!*
@@ -391,12 +387,10 @@ Dapatkan token di: https://vercel.com/account/tokens
 
     await sendMessage(sender, '🔄 *Deploying website...* Mohon tunggu.');
 
-    // Deploy to Vercel
     const { deployToVercel } = require('./aiEngine');
     const result = await deployToVercel(project, user.user_vercel_token);
 
     if (result.success) {
-      // Update project with Vercel URL
       const update = db.prepare(`
         UPDATE web_projects SET vercel_url = ? WHERE id = ?
       `);
@@ -526,17 +520,14 @@ async function handleDeposit(sender, senderNumber, args) {
     const db = getDb();
     const pricing = db.prepare('SELECT * FROM pricing_settings LIMIT 1').get();
     
-    // Calculate token amount (1 token = Rp 1000)
     const tokenAmount = Math.floor(amount / (pricing.token_rate_idr || 1000));
     
-    // Create deposit record
     const insert = db.prepare(`
       INSERT INTO deposits (user_id, payment_method, jumlah, token_amount, status)
       VALUES (?, ?, ?, ?, ?)
     `);
     const depositId = insert.run(user.id, 'qris', amount, tokenAmount, 'pending_proof').lastInsertRowid;
 
-    // Send QRIS payment instructions
     await sendMessage(sender, `
 💳 *Instruksi Deposit*
 
@@ -560,7 +551,6 @@ async function handleDeposit(sender, senderNumber, args) {
 ⚠️ *Jangan tutup chat ini sampai deposit aktif!*
     `);
 
-    // Notify admin
     await sendMessage(`${adminPhoneNumber}@s.whatsapp.net`, `
 💰 *DEPOSIT REQUEST*
 
@@ -608,11 +598,9 @@ async function handleRevision(sender, senderNumber, args) {
 
     await sendMessage(sender, '🔄 *Sedang melakukan revisi...* Mohon tunggu.');
 
-    // Generate revised website
     const result = await generateWebsite(revisionText, user.id, project);
     
     if (result.success) {
-      // Update project
       const update = db.prepare(`
         UPDATE web_projects 
         SET html_code = ?, css_code = ?, js_code = ?,
@@ -662,14 +650,12 @@ async function handleSetDomain(sender, senderNumber, args) {
     const db = getDb();
     const user = await getUserByPhone(senderNumber);
     
-    // Check if domain is available
     const existing = db.prepare('SELECT * FROM web_projects WHERE custom_domain = ?').get(domain);
     if (existing) {
       await sendMessage(sender, '❌ Domain sudah digunakan oleh pengguna lain.');
       return;
     }
 
-    // Update user's latest project or specified project
     const latestProject = db.prepare(`
       SELECT * FROM web_projects WHERE user_id = ? ORDER BY id DESC LIMIT 1
     `).get(user.id);
@@ -804,7 +790,6 @@ async function handleAuditWeb(sender, senderNumber, args) {
     const user = await getUserByPhone(senderNumber);
     await deductTokens(user.id, 270);
 
-    // Perform audit
     const auditResult = await performWebsiteAudit(project);
     
     await sendMessage(sender, `
@@ -851,14 +836,12 @@ async function handleRollback(sender, senderNumber, args) {
     const user = await getUserByPhone(senderNumber);
     await deductTokens(user.id, 270);
 
-    // Get version history
     const history = JSON.parse(project.version_history_json || '[]');
     if (history.length < 2) {
       await sendMessage(sender, '❌ Tidak ada versi sebelumnya untuk di-restore.');
       return;
     }
 
-    // Restore previous version
     const previousVersion = history[history.length - 2];
     const update = db.prepare(`
       UPDATE web_projects 
@@ -904,7 +887,6 @@ async function handleEditText(sender, senderNumber, args) {
       return;
     }
 
-    // Replace text in HTML
     const updatedHtml = latestProject.html_code.replace(new RegExp(oldText, 'g'), newText);
     
     const update = db.prepare(`
@@ -952,7 +934,6 @@ async function handleAddTeam(sender, senderNumber, args) {
 Member sekarang dapat mengakses fitur agency.
     `);
 
-    // Notify team member
     await sendMessage(`${teamPhone}@s.whatsapp.net`, `
 🎉 *Anda telah ditambahkan ke team agency!*
 
@@ -1025,7 +1006,6 @@ async function handlePalette(sender, senderNumber, args) {
       return;
     }
 
-    // Apply palette colors
     const paletteColors = palettes[palette];
     const colorCss = `
       :root {
@@ -1079,7 +1059,6 @@ async function handleABTest(sender, senderNumber, args) {
     const user = await getUserByPhone(senderNumber);
     await deductTokens(user.id, 270);
 
-    // Generate variant B
     const variantAUrl = `${process.env.BASE_URL || 'http://localhost:3000'}/preview/${projectId}?variant=A`;
     const variantBUrl = `${process.env.BASE_URL || 'http://localhost:3000'}/preview/${projectId}?variant=B`;
 
@@ -1166,11 +1145,9 @@ async function handlePWA(sender, senderNumber, args) {
     const user = await getUserByPhone(senderNumber);
     await deductTokens(user.id, 270);
 
-    // Generate PWA files
     const manifest = generateManifest(project);
     const sw = generateServiceWorker(project);
 
-    // Update project
     const update = db.prepare(`
       UPDATE web_projects SET js_code = ? WHERE id = ?
     `);
@@ -1250,21 +1227,16 @@ Ketik !menu untuk menampilkan menu interaktif.
 
 async function handleAIChat(sender, senderNumber, text) {
   try {
-    // Simple AI response for non-commands
     const user = await getUserByPhone(senderNumber);
     const db = getDb();
     
-    // Save chat history
     const insert = db.prepare(`
       INSERT INTO chat_history (user_id, role, message)
       VALUES (?, ?, ?)
     `);
     insert.run(user.id, 'user', text);
 
-    // Get AI response
     const aiResponse = await generateAIResponse(text, user);
-    
-    // Save AI response
     insert.run(user.id, 'assistant', aiResponse);
     
     await sendMessage(sender, aiResponse);
@@ -1274,7 +1246,6 @@ async function handleAIChat(sender, senderNumber, text) {
 }
 
 async function performWebsiteAudit(project) {
-  // Simulate audit
   const seoScore = Math.floor(Math.random() * 30) + 70;
   const performance = Math.floor(Math.random() * 30) + 70;
   const security = Math.floor(Math.random() * 30) + 70;
@@ -1364,7 +1335,6 @@ self.addEventListener('activate', event => {
 }
 
 async function generateAIResponse(text, user) {
-  // Simple response generator
   const responses = [
     'Halo! Ada yang bisa saya bantu? Ketik !menu untuk melihat semua fitur.',
     'Saya siap membantu Anda membuat website! Coba ketik !buatweb untuk mulai.',
@@ -1387,9 +1357,7 @@ async function handleSetPixel(sender, senderNumber, args) {
   try {
     const db = getDb();
     const user = await getUserByPhone(senderNumber);
-    const pricing = db.prepare('SELECT * FROM pricing_settings LIMIT 1').get();
     
-    // Save pixel ID to user's settings
     const update = db.prepare(`
       UPDATE users SET midtrans_client_key = ? WHERE id = ?
     `);
