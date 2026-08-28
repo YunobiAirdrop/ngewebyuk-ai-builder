@@ -1,19 +1,35 @@
 {
   "name": "ngewebyuk-ai-builder",
-  "version": "13.0.0",
+  "version": "1.0.0",
+  "description": "AI Website Builder with WhatsApp Bot Integration",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "dev": "nodemon server.js"
   },
   "dependencies": {
-    "axios": "^1.7.2",
+    "@supabase/supabase-js": "^2.39.0",
+    "@vercel/sdk": "^0.1.0",
+    "@whiskeysockets/baileys": "^6.6.0",
+    "adm-zip": "^0.5.10",
+    "axios": "^1.6.0",
+    "better-sqlite3": "^9.2.0",
     "cors": "^2.8.5",
-    "dotenv": "^16.4.5",
-    "ejs": "^3.1.10",
-    "express": "^4.19.2",
-    "express-rate-limit": "^7.3.1",
+    "dotenv": "^16.3.1",
+    "ejs": "^3.1.9",
+    "express": "^4.18.2",
+    "express-rate-limit": "^7.1.5",
+    "form-data": "^4.0.0",
     "jsonwebtoken": "^9.0.2",
     "jszip": "^3.10.1",
-    "sqlite3": "^5.1.7"
+    "netlify": "^13.1.16",
+    "pdf-parse": "^1.1.1",
+    "puppeteer": "^21.5.0",
+    "qrcode": "^1.5.3",
+    "qrcode-terminal": "^0.12.0",
+    "sanitize-html": "^2.11.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
   }
 }
